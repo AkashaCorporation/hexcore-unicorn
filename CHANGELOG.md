@@ -2,19 +2,17 @@
 
 All notable changes to `hexcore-unicorn` will be documented in this file.
 
-## [1.2.2] - 2026-03-22
+## [1.2.3] - 2026-03-26
 
 ### Fixed
 
-- **Hook-time mutation support** — removed the `emulating_` write guards from `memMap`, `memWrite`, `regWrite`, and `regWriteBatch` so hook callbacks can safely mutate emulator state while Unicorn is paused.
-- **Interrupt hook synchronization** — switched the interrupt hook path to a blocking handoff with an explicit completion signal, allowing syscall handlers to write return values before emulation resumes.
-- **Invalid memory fault recovery** — invalid memory hooks now perform page-aligned `uc_mem_map` directly on the Unicorn thread instead of relying on cross-thread mapping during async emulation.
-- **ThreadSafeFunction callback lifetime** — hook callback payloads are now allocated with `std::make_unique` and passed through release semantics, reducing leak-prone raw allocation patterns in the hot path.
-- **Context wrapper API alignment** — standalone bindings now match the monorepo context ownership flow (`SetContext(ctx)`), avoiding signature drift between the packaged engine and the IDE integration.
-
-### Added
-
-- **ARM64 crash regression harness** — added `test/test_arm64_crash.js` to exercise synchronous ARM64 `emuStart`, SVC handling, interrupt hooks, and basic register progression on Windows.
+- **GetRegisterSize Lookup Table** — Full per-register size lookup for x86/x64 (200+ registers: GPR 8/16/32/64-bit, XMM 128-bit, YMM 256-bit, ZMM 512-bit, FP, MMX, segment, control/debug), ARM64 (B/H/S/D/Q/X/W), and ARM32. `RegRead` returns correctly-sized buffers; `RegWrite` accepts Buffer for wide registers.
+- **MemMap 32-bit Truncation** — All `Uint32Value()` calls for memory sizes replaced with BigInt-aware parsing. Enables mapping regions > 4GB.
+- **StateRestore Memory Cleanup** — `StateRestore()` now calls `uc_mem_unmap()` on all existing regions before remapping from snapshot. Eliminates stale region persistence.
+- **StateSave Data Loss** — When `uc_mem_read` fails, buffer is still stored (zeroed) with an `error` field for diagnostics.
+- **Auto-Map Limit** — `InvalidMemHookCB` enforces `MAX_AUTO_MAPS = 1000` with atomic counter. Prevents address space exhaustion.
+- **CodeHook Sequence Numbers** — `CodeHookCB` stamps atomic `sequenceNumber` for out-of-order delivery detection.
+- **Copyright Headers** — Replaced Microsoft copyright with HikariSystem in all source files.
 
 ## [1.2.1] - 2026-02-15
 

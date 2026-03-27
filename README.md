@@ -17,6 +17,11 @@ Part of the **HikariSystem HexCore** binary analysis IDE.
 - **Native Breakpoints (O(1) lookup)**
 - **Shared Memory Support (GC Safe)**
 - **State Snapshotting (Save/Restore)**
+- **Per-register size lookup table** — x86/x64 (200+ regs: GPR 8/16/32/64-bit, XMM/YMM/ZMM, FP, MMX, segment, control/debug), ARM64, ARM32. `RegRead` returns correctly-sized buffers; `RegWrite` accepts Buffer for wide registers.
+- **BigInt-safe memory sizes** — `memMap` handles regions > 4GB (no 32-bit truncation)
+- **Clean state restore** — `stateRestore` unmaps all existing regions before remapping from snapshot (no stale region persistence)
+- **Auto-map guard** — invalid memory hook enforces a `MAX_AUTO_MAPS = 1000` limit with atomic counter to prevent address space exhaustion
+- **CodeHook sequence numbers** — atomic `sequenceNumber` stamped on each code hook delivery for out-of-order detection
 
 ## Installation
 
