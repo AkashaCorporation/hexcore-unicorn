@@ -2,6 +2,31 @@
 
 All notable changes to `hexcore-unicorn` will be documented in this file.
 
+## [1.3.0] - 2026-04-20 — "Project Perseus — Zero-Copy Hook Delivery"
+
+### Added
+
+- **SAB (SharedArrayBuffer) Zero-Copy Hook Delivery** — New `hookAddSAB` API exposes a SPSC lock-free ring backed by a `SharedArrayBuffer`. C++ `CodeHookSabCB` writes 40-byte records (PC, instruction bytes, registers) directly into the SAB via `Int32Array` backing, eliminating the per-hook-fire TSFN transition. JS consumer reads records with backpressure semantics.
+- **ABI Guarantees via `static_assert`** — Compile-time contracts in `unicorn_wrapper.cpp` catch any compiler that produces a layout incompatible with the JavaScript Int32Array reader in `hexcore-common`:
+  - `sizeof(RingHeader) == 64` (cache-line alignment)
+  - `alignof(RingHeader) == 64`
+  - `sizeof(CodeHookSabSlot) == 32` (TS layout contract)
+  - `sizeof(std::atomic<uint32_t>) == sizeof(uint32_t)` (ABI compatibility)
+- **Split-path dispatch** — Preserves existing `emuStop()` semantics. Legacy TSFN path still available via flag; SAB is opt-in per hook via `hookAddSAB` instead of `hookAdd`.
+- **Native `breakpointAdd` / `breakpointDel`** — Step-over-breakpoint support: when `start(addr)` resumes from a native breakpoint, the dance `breakpointDel → emuStart(count=1) → breakpointAdd` ensures `continue()` doesn't immediately re-fire the same breakpoint.
+
+### Measured impact
+
+- **1.34× throughput improvement** on heavy-hooking workloads (malware API tracing)
+- **100% delivery vs ~35% legacy** under backpressure
+- **7/7 SAB hook tests + SAB benchmark passing** in the integration suite
+
+### Notes
+
+- Perseus is the codename for the SPSC zero-copy IPC layer; Project Azoth (clean-room dynamic analysis engine) builds on top of it
+- Full CPU-state `BigUint64Array` typed view (target: 10M+ inst/sec) still deferred to v4.0.0
+- Legacy TSFN `hookAdd` path remains stable and unchanged — no breaking API changes
+
 ## [1.2.3] - 2026-03-26
 
 ### Fixed
